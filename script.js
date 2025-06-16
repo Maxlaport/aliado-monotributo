@@ -1,4 +1,3 @@
-
 const verifyBtn = document.getElementById('verify-btn');
 const cuitInput = document.getElementById('cuit');
 const jurSelect = document.getElementById('jurisdiccion');
@@ -23,7 +22,7 @@ verifyBtn.addEventListener('click', async () => {
     verifyBtn.textContent = 'Consultando...';
 
     try {
-        const response = await fetch(`/api/verify?cuit=<span class="math-inline">\{cuit\}&jur\=</span>{jur}`);
+        const response = await fetch(`/api/verify?cuit=${cuit}&jur=${jur}`);
         const data = await response.json();
 
         resultTitle.textContent = 'Resultado';
@@ -46,8 +45,8 @@ verifyBtn.addEventListener('click', async () => {
         resultTitle.textContent = 'Error de Conexión';
         resultMessage.textContent = 'No se pudo comunicar con el servidor. Por favor, intentá de nuevo más tarde.';
     } finally {
-        // Reactivar el botón
         verifyBtn.disabled = false;
         verifyBtn.textContent = 'Verificar CUIT';
     }
 });
+
