@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aliado Monotributo - Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="brand-part1">Aliado</span><span class="brand-part2">Monotributo</span></h1>
+            <p class="subtitle">Verificador de Retenciones de IIBB (Prototipo)</p>
+        </header>
+        <main>
+            <div class="card">
+                <div class="form-group">
+                    <label for="cuit">CUIT del Cliente (sin guiones)</label>
+                    <input type="text" id="cuit" placeholder="Ej: 20123456789">
+                </div>
+                <div class="form-group">
+                    <label for="jurisdiccion">Jurisdicción</label>
+                    <select id="jurisdiccion">
+                        <option value="AGIP">CABA (AGIP)</option>
+                        <option value="ARBA">Pcia. Buenos Aires (ARBA)</option>
+                    </select>
+                </div>
+                <button id="verify-btn">Verificar CUIT</button>
+            </div>
+            <div id="result-card" class="card result hidden">
+                <h2 id="result-title">Resultado</h2>
+                <p id="result-message"></p>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
