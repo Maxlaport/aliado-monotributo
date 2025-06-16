@@ -4,11 +4,22 @@ import pandas as pd
 import os
 
 app = Flask(__name__)
-# Habilitamos CORS para permitir que el frontend se comunique con esta API
 CORS(app)
 
-# La lógica para encontrar los archivos del padrón sigue siendo la misma
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# --- INICIO DE CÓDIGO DE DIAGNÓSTICO ---
+print("INICIANDO SCRIPT: api/verify.py")
+# Obtenemos la ruta del directorio donde se está ejecutando este script
+current_dir = os.path.dirname(os.path.realpath(__file__))
+print(f"Directorio actual detectado: {current_dir}")
+
+# Listamos todos los archivos en ese directorio para ver si los padrones están ahí
+try:
+    files_in_dir = os.listdir(current_dir)
+    print(f"Archivos encontrados en el directorio: {files_in_dir}")
+except Exception as e:
+    print(f"Error al listar archivos del directorio: {e}")
+# --- FIN DE CÓDIGO DE DIAGNÓSTICO ---
+
 
 def verify_cuit(cuit, jur):
     padron_files = {
@@ -16,10 +27,17 @@ def verify_cuit(cuit, jur):
         "ARBA": "padron_arba.txt"
     }
     
-    file_path = os.path.join(current_dir, padron_files.get(jur))
+    filename = padron_files.get(jur)
+    if not filename:
+        return {"error": f"Jurisdicción '{jur}' no es válida."}
 
-    if not file_path or not os.path.exists(file_path):
-        return {"error": f"Padrón para {jur} no encontrado en el servidor."}
+    # Usamos la ruta detectada al inicio para construir la ruta completa al archivo
+    file_path = os.path.join(current_dir, filename)
+    print(f"Intentando abrir el archivo en la ruta: {file_path}")
+
+    if not os.path.exists(file_path):
+        print(f"ERROR CRÍTICO: El archivo no existe en la ruta '{file_path}'")
+        return {"error": f"Archivo de padrón '{filename}' no encontrado en el servidor."}
 
     try:
         df = pd.read_csv(file_path, sep=';', header=None, dtype=str)
@@ -29,7 +47,6 @@ def verify_cuit(cuit, jur):
         
         if not result.empty:
             alicuota = result['Alicuota'].iloc[0]
-            # ... (El resto de la lógica para construir la respuesta es idéntica)
             return {
                 "encontrado": True,
                 "cuit_consultado": cuit,
@@ -41,9 +58,6 @@ def verify_cuit(cuit, jur):
                 },
                 "fuente_de_datos": {
                     "nombre_padron": f"Padrón de Ejemplo - Junio 2025 ({jur})",
-                    "nombre_archivo": os.path.basename(file_path),
-                    "fecha_publicacion": "2025-06-15",
-                    "enlace_oficial": "#"
                 }
             }
         else:
@@ -51,14 +65,15 @@ def verify_cuit(cuit, jur):
                 "encontrado": False,
                 "cuit_consultado": cuit,
                 "jurisdiccion": f"{jur}",
-                "mensaje": "El CUIT no se encuentra en el padrón. No corresponde aplicar retención."
+                "mensaje": "El CUIT no se encuentra en el padrón."
             }
     except Exception as e:
+        print(f"ERROR CRÍTICO DURANTE LECTURA DE PADRÓN: {str(e)}")
         return {"error": f"Error procesando el padrón: {str(e)}"}
 
-# Vercel buscará y ejecutará esta variable 'app' de Flask
 @app.route('/api/verify', methods=['GET'])
 def handle_verify():
+    print("Recibida una petición a /api/verify")
     cuit = request.args.get('cuit')
     jur = request.args.get('jur')
 
