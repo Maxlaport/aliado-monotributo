@@ -1,22 +1,12 @@
-// --- NOTA IMPORTANTE: Lógica de Prototipo ---
-// En esta versión, la verificación se hace contra una lista de CUITs de ejemplo
-// para probar la interfaz. La versión real usará el motor de Python que te mostré.
-const padronAGIP = {
-    '20111111111': { alicuota: '3.00%' },
-    '20222222222': { alicuota: '5.00%' }
-};
-const padronARBA = {
-    '20333333333': { alicuota: '2.50%' },
-    '20444444444': { alicuota: '4.00%' }
-};
 
 const verifyBtn = document.getElementById('verify-btn');
 const cuitInput = document.getElementById('cuit');
 const jurSelect = document.getElementById('jurisdiccion');
 const resultCard = document.getElementById('result-card');
 const resultMessage = document.getElementById('result-message');
+const resultTitle = document.getElementById('result-title');
 
-verifyBtn.addEventListener('click', () => {
+verifyBtn.addEventListener('click', async () => {
     const cuit = cuitInput.value.trim();
     const jur = jurSelect.value;
 
@@ -25,20 +15,39 @@ verifyBtn.addEventListener('click', () => {
         return;
     }
 
-    let padron;
-    if (jur === 'AGIP') {
-        padron = padronAGIP;
-    } else {
-        padron = padronARBA;
-    }
-
-    const data = padron[cuit];
-
-    if (data) {
-        resultMessage.innerHTML = `El CUIT <span class="cuit-found">${cuit}</span> <span class="cuit-found">SÍ</span> se encuentra en el padrón de <span class="math-inline">\{jur\}\.<br\>Alícuota de Retención\: <strong\></span>{data.alicuota}</strong>.`;
-    } else {
-        resultMessage.innerHTML = `El CUIT <span class="cuit-not-found">${cuit}</span> <span class="cuit-not-found">NO</span> se encuentra en el padrón de ${jur}. No corresponde aplicar retención.`;
-    }
-
+    // Mostrar estado de carga
+    resultTitle.textContent = 'Verificando...';
+    resultMessage.textContent = 'Consultando los padrones en tiempo real. Por favor, esperá.';
     resultCard.classList.remove('hidden');
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'Consultando...';
+
+    try {
+        const response = await fetch(`/api/verify?cuit=<span class="math-inline">\{cuit\}&jur\=</span>{jur}`);
+        const data = await response.json();
+
+        resultTitle.textContent = 'Resultado';
+
+        if (data.error) {
+            resultMessage.textContent = `Error: ${data.error}`;
+        } else if (data.encontrado) {
+            resultMessage.innerHTML = 
+                `El CUIT <strong>${data.cuit_consultado}</strong> <span class="cuit-found">SÍ</span> se encuentra en el padrón de ${data.jurisdiccion}.<br><br>` +
+                `<strong>${data.resultado.mensaje}</strong><br><br>` +
+                `<small>Fuente: ${data.fuente_de_datos.nombre_padron}</small>`;
+        } else {
+            resultMessage.innerHTML = 
+                `El CUIT <strong>${data.cuit_consultado}</strong> <span class="cuit-not-found">NO</span> se encuentra en el padrón de ${data.jurisdiccion}.<br><br>` +
+                `No corresponde aplicar retención según la información disponible.<br><br>` +
+                `<small>Fuente: ${data.fuente_de_datos.nombre_padron}</small>`;
+        }
+
+    } catch (error) {
+        resultTitle.textContent = 'Error de Conexión';
+        resultMessage.textContent = 'No se pudo comunicar con el servidor. Por favor, intentá de nuevo más tarde.';
+    } finally {
+        // Reactivar el botón
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verificar CUIT';
+    }
 });
